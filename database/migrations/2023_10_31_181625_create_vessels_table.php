@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('vessels', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('IMO_number');
+            $table->string('IMO_number')->unique();
             $table->timestamps();
         });
     }
