@@ -15,6 +15,7 @@ class Voyage extends Model
         'code',
         'start',
         'end',
+        'status',
         'revenues',
         'expenses',
         'profit',
