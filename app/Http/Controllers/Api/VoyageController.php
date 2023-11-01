@@ -41,7 +41,7 @@ class VoyageController extends Controller
             ], 400);
         }
 
-        if ($request->get('status') == '' || !in_array($request->get('status'), ['processing', 'ongoing', 'submitted'])) {
+        if (!$request->filled('status') || !in_array($request->get('status'), ['processing', 'ongoing', 'submitted'])) {
             $request['status'] = 'pending';
         }
 
