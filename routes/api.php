@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\VesselOpexController;
 use App\Http\Controllers\Api\VoyageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,3 +19,6 @@ use Illuminate\Support\Facades\Route;
 Route::post('voyages', [VoyageController::class, 'store']);
 Route::put('voyages/{voyageId}', [VoyageController::class, 'update']);
 Route::delete('voyages/{voyageId}', [VoyageController::class, 'destroy']);
+
+Route::post('vessels/{vesselId}/vessel-opex', [VesselOpexController::class, 'store']);
+Route::get('vessels/{vesselId}/financial-report', [VesselOpexController::class, 'index']);
