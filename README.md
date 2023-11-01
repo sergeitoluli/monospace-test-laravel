@@ -11,18 +11,18 @@
 
 Then it is time to fix your [.env] file: 
 Fix your database connection as follows:
--DB_CONNECTION=pgsql
--DB_HOST=127.0.0.1
--DB_PORT=5432
--DB_DATABASE=your_db
--DB_USERNAME=username
--DB_PASSWORD=password
+- DB_CONNECTION=pgsql
+- DB_HOST=127.0.0.1
+- DB_PORT=5432
+- DB_DATABASE=your_db
+- DB_USERNAME=username
+- DB_PASSWORD=password
 
 Fix your APP_KEY by this:
--APP_KEY=base64:
+- APP_KEY=base64:
 
 Then run 
--[php artisan key:generate]
+- [php artisan key:generate]
 
 At the end run 
--[php artisan serve]
+- [php artisan serve]
