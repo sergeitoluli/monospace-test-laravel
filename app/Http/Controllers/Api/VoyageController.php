@@ -27,7 +27,7 @@ class VoyageController extends Controller
             ], 400);
         }
 
-        if ($request->get('start') > $request->get('end')) {
+        if ($request->get('start') >= $request->get('end')) {
             return response()->json([
                 'message' => 'Start date should not be later than end date! Please check! Cannot store the voyage!'
             ], 400);
@@ -76,34 +76,69 @@ class VoyageController extends Controller
             ->where('vessel_id', $voyage->vessel_id)
             ->where('status', 'ongoing')
             ->count();
-        
+
         if ($query && $request->get('status') == 'ongoing') {
             return response()->json([
                 'message' => 'This vessel is already on a voyage! Cannot update the voyage!'
             ], 400);
         }
 
-        if ($request->get('start') > $request->get('end')) {
-            return response()->json([
-                'message' => 'Start date should not be later than end date! Please check! Cannot update the voyage!'
-            ], 400);
+        if ($request->filled('revenues') && $request->filled('expenses')) {
+            $profit = $request->get('revenues') - $request->get('expenses');
+
+            if ($profit > 0) {
+                $voyage->profit = $profit;
+            } else {
+                return response()->json([
+                    'message' => 'Profit is less or equal to 0! Please check revenues and expenses! Cannot store the voyage!'
+                ], 400);
+            }
         }
 
-        $profit = $request->get('revenues') - $request->get('expenses');
-
-        if ($profit <= 0) {
-            return response()->json([
-                'message' => 'Profit is less or equal to 0! Please check revenues and expenses! Cannot store the voyage!'
-            ], 400);
+        if ($request->filled('status')) {
+            if (in_array($request->get('status'), ['processing', 'ongoing', 'submitted'])) {
+                $voyage->status = $request->get('status');
+            } else {
+                $voyage->status = 'pending';
+            }
         }
 
-        if ($request->get('status') == '' || !in_array($request->get('status'), ['processing', 'ongoing', 'submitted'])) {
-            $request['status'] = 'pending';
+        /* BONUS */
+        if ($request->filled('start') && !$request->filled('end')) {
+            if ($request->get('start') >= $voyage->end) {
+                return response()->json([
+                    'message' => 'Start date should not be later than end date! Please check! Cannot update the voyage!'
+                ], 400);
+            }
+            $name = Vessel::find($voyage->vessel_id)->name;
+            $voyage->start = $request->get('start');
+            $voyage->code = $name . '-' . $request->get('start');
         }
 
-        $request['profit'] = $profit;
+        if (!$request->filled('start') && $request->filled('end')) {
+            if ($voyage->start >= $request->get('end')) {
+                return response()->json([
+                    'message' => 'Start date should not be later than end date! Please check! Cannot update the voyage!'
+                ], 400);
+            }
 
-        if (!$voyage->update($request->all())) {
+            $voyage->end = $request->get('end');
+        }
+
+        if ($request->filled('start') && $request->filled('end')) {
+            if ($request->get('start') >= $request->get('end')) {
+                return response()->json([
+                    'message' => 'Start date should not be later than end date! Please check! Cannot update the voyage!'
+                ], 400);
+            }
+
+            $name = Vessel::find($voyage->vessel_id)->name;
+            $voyage->code = $name . '-' . $request->get('start');
+            $voyage->start = $request->get('start');
+            $voyage->end = $request->get('end');
+        }
+
+        if (!$voyage->update()) {
             return response()->json(['message' => 'Internal error! Cannot update the voyage!'], 500);
         }
 
