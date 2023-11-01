@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreVesselRequest;
 use App\Models\Vessel;
 use App\Models\VesselOpex;
+use App\Models\Voyage;
 use DB;
 use Illuminate\Http\Request;
 
@@ -16,22 +17,34 @@ class VesselOpexController extends Controller
      */
     public function index($vesselId)
     {
-        $query = DB::table('vessel_opex')
-            ->join('vessels', 'vessels.id', '=', 'vessel_opex.vessel_id')
-            ->join('voyages', 'vessels.id', '=', 'voyages.vessel_id')
-            ->where('vessels.id', $vesselId)
-            ->select(
-                'voyages.id as voyage_id',
-                'voyages.start as start',
-                'voyages.end as end',
-                'voyages.revenues as voyage_revenues',
-                'voyages.expenses as voyage_expenses',
-                'start AS start',
-                DB::raw('"end" AS "end"'),
-                'profit as voyage_profit',
-                DB::raw('(profit / date_part(\'day\', "end"::timestamp - start::timestamp)) AS voyage_profit_daily_average')
-            )
-            ->get();
+        if (!Voyage::where('vessel_id', $vesselId)->count()) {
+            return response()->json(['message' => 'There are no voyages for this vessel!'], 404);
+        }
+        
+        $query = DB::select(
+            'SELECT 
+            voyages.id as voyage_id,
+            voyages.start,
+            voyages."end",
+            voyages.revenues as voyage_revenues,
+            voyages.expenses as voyage_expenses,
+            voyages.profit as voyage_profit,
+            CAST((profit / date_part(\'day\', "end"::timestamp - start::timestamp)) AS DECIMAL(8,2)) as voyage_profit_daily_average,
+            vessel_expenses_total,
+            (profit - vessel_expenses_total) AS net_profit,
+            CAST(((profit - vessel_expenses_total) / date_part(\'day\', "end"::timestamp - start::timestamp)) AS DECIMAL(8,2)) as net_profit_daily_average
+            FROM
+            voyages
+            INNER JOIN (
+              SELECT vessel_id, 
+              SUM(expenses) AS vessel_expenses_total
+              FROM vessel_opex
+              GROUP BY vessel_id
+            ) AS vessel_opex ON voyages.vessel_id = vessel_opex.vessel_id
+            WHERE
+            voyages.vessel_id = 2;
+            '
+        );
 
         return response()->json($query);
     }
@@ -59,21 +72,5 @@ class VesselOpexController extends Controller
         }
 
         return response()->json(['message' => 'Vessel operation expenses stored successfully!'], 200);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, VesselOpex $vesselOpex)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(VesselOpex $vesselOpex)
-    {
-        //
     }
 }
